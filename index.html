@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Converter Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, #ff006e 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, #8338ec 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, #3a86ff 0%, transparent 50%),
+                linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape1 {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #ff006e, #8338ec);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape2 {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(45deg, #3a86ff, #06ffa5);
+            top: 60%;
+            right: 20%;
+            animation-delay: 2s;
+        }
+
+        .shape3 {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #ffbe0b, #fb5607);
+            bottom: 20%;
+            left: 70%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(10px) rotate(240deg); }
+        }
+
+        /* Computer Terminal Effect */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .terminal {
+            background: rgba(15, 15, 35, 0.95);
+            border: 3px solid #8338ec;
+            border-radius: 20px;
+            box-shadow: 
+                0 0 50px rgba(131, 56, 236, 0.3),
+                inset 0 0 30px rgba(131, 56, 236, 0.1);
+            padding: 0;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            animation: terminalGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes terminalGlow {
+            from { box-shadow: 0 0 50px rgba(131, 56, 236, 0.3), inset 0 0 30px rgba(131, 56, 236, 0.1); }
+            to { box-shadow: 0 0 80px rgba(131, 56, 236, 0.5), inset 0 0 50px rgba(131, 56, 236, 0.2); }
+        }
+
+        .terminal-header {
+            background: linear-gradient(90deg, #8338ec, #3a86ff);
+            padding: 15px 20px;
+            border-radius: 17px 17px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-circle {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f57; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #28ca42; }
+
+        .terminal-title {
+            font-family: 'Orbitron', monospace;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-left: 10px;
+        }
+
+        .terminal-content {
+            padding: 40px;
+            color: white;
+        }
+
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff, #06ffa5);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #8892b0;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .status-bar {
+            background: rgba(131, 56, 236, 0.2);
+            border: 1px solid #8338ec;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            color: #06ffa5;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-label {
+            display: block;
+            color: #8338ec;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(58, 134, 255, 0.1);
+            border: 2px solid #3a86ff;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-family: 'Exo 2', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #06ffa5;
+            box-shadow: 0 0 20px rgba(6, 255, 165, 0.3);
+            background: rgba(6, 255, 165, 0.1);
+        }
+
+        .url-input::placeholder {
+            color: #8892b0;
+        }
+
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .format-option {
+            position: relative;
+        }
+
+        .format-option input[type="radio"] {
+            display: none;
+        }
+
+        .format-label {
+            display: block;
+            padding: 15px 10px;
+            background: rgba(131, 56, 236, 0.2);
+            border: 2px solid #8338ec;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .format-label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .format-option input[type="radio"]:checked + .format-label {
+            background: linear-gradient(45deg, #ff006e, #8338ec);
+            border-color: #ff006e;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.4);
+        }
+
+        .format-option input[type="radio"]:checked + .format-label::before {
+            left: 100%;
+        }
+
+        .format-label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(131, 56, 236, 0.3);
+        }
+
+        .quality-section {
+            margin-bottom: 30px;
+        }
+
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .convert-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff);
+            background-size: 300% 300%;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: buttonPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes buttonPulse {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .convert-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 0, 110, 0.4);
+        }
+
+        .convert-btn:active {
+            transform: translateY(0);
+        }
+
+        .convert-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(58, 134, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid #3a86ff;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .cyber-spinner {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .cyber-spinner::before,
+        .cyber-spinner::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid transparent;
+            border-top: 3px solid #ff006e;
+            border-right: 3px solid #8338ec;
+            border-radius: 50%;
+            animation: cyberSpin 1s linear infinite;
+        }
+
+        .cyber-spinner::after {
+            animation-delay: 0.5s;
+            border-top: 3px solid #3a86ff;
+            border-right: 3px solid #06ffa5;
+        }
+
+        @keyframes cyberSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(6, 255, 165, 0.1);
+            border: 2px solid #06ffa5;
+            border-radius: 15px;
+            animation: resultSlide 0.5s ease-out;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        @keyframes resultSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .video-preview {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .video-thumbnail {
+            width: 160px;
+            height: 90px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #06ffa5;
+        }
+
+        .video-info h3 {
+            color: #06ffa5;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .video-meta {
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #06ffa5, #3a86ff);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(6, 255, 165, 0.4);
+        }
+
+        .error-container {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 0, 110, 0.1);
+            border: 2px solid #ff006e;
+            border-radius: 12px;
+            color: #ff006e;
+        }
+
+        .error-container.active {
+            display: block;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(131, 56, 236, 0.3);
+        }
+
+        .feature-card {
+            background: rgba(131, 56, 236, 0.1);
+            border: 1px solid #8338ec;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(131, 56, 236, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .feature-title {
+            color: #8338ec;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+
+        .setup-info {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(255, 190, 11, 0.1);
+            border: 2px solid #ffbe0b;
+            border-radius: 15px;
+            color: #ffbe0b;
+        }
+
+        .setup-info h3 {
+            margin-bottom: 15px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .setup-info ol {
+            margin-left: 20px;
+            line-height: 1.6;
+        }
+
+        .setup-info code {
+            background: rgba(255, 190, 11, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .terminal-content {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .video-preview {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .video-thumbnail {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 16/9;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-shapes">
+        <div class="shape shape1"></div>
+        <div class="shape shape2"></div>
+        <div class="shape shape3"></div>
+    </div>
+
+    <div class="container">
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <button class="btn-circle btn-close"></button>
+                    <button class="btn-circle btn-minimize"></button>
+                    <button class="btn-circle btn-maximize"></button>
+                </div>
+                <div class="terminal-title">OAE YOUTUBE_CONVERTER_PRO V.1.0</div>
+            </div>
+            
+            <div class="terminal-content">
+                <h1>🚀 CYBER CONVERTER</h1>
+                <p style="text-align:center; color: #fff;font-size: 1.5em;font-weight: bold;text-shadow: 2px 2px 6px #38b000, 0 0 4px #ffd700;-webkit-text-stroke: 1px #38b000;">Advanced YouTube Video Processing System <BR><BR>คำเตือน: กรุณาใช้เครื่องมือนี้เพื่อวัตถุประสงค์ทางการศึกษา<BR>และการใช้งานส่วนบุคคลเท่านั้น ผู้ใช้ควรเคารพในสิทธิ์ในทรัพย์สินทางปัญญาของเจ้าของเนื้อหา และปฏิบัติตามข้อกำหนดและเงื่อนไขการให้บริการของ YouTube อย่างเคร่งครัด <BR>ผู้ใช้เป็นผู้รับผิดชอบแต่เพียงผู้เดียวในกรณีที่มีการนำเครื่องมือนี้<BR>ไปใช้ในลักษณะที่ละเมิดลิขสิทธิ์ หรือฝ่าฝืนกฎหมายใด ๆ ที่เกี่ยวข้อง</p><BR> 
+                
+                <div class="status-bar">
+                    <div id="status-text">SYSTEM READY • WAITING FOR INPUT...</div>
+                </div>
+                
+                <div class="input-section">
+                    <label class="input-label" for="youtube-url">🔗 YouTube URL Input:</label>
+                    <input type="text" id="youtube-url" class="url-input" 
+                           placeholder="https://www.youtube.com/watch?v=..." />
+                </div>
+                
+                <div class="input-section">
+                    <label class="input-label">🎬 Output Format:</label>
+                    <div class="format-grid">
+                        <div class="format-option">
+                            <input type="radio" id="format-mp4" name="format" value="mp4" checked>
+                            <label for="format-mp4" class="format-label">MP4</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="format-mov" name="format" value="mov">
+                            <label for="format-mov" class="format-label">MOV</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="format-avi" name="format" value="avi">
+                            <label for="format-avi" class="format-label">AVI</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="format-mkv" name="format" value="mkv">
+                            <label for="format-mkv" class="format-label">MKV</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="format-webm" name="format" value="webm">
+                            <label for="format-webm" class="format-label">WEBM</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="format-mp3" name="format" value="mp3">
+                            <label for="format-mp3" class="format-label">MP3</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quality-section">
+                    <label class="input-label">⚡ Quality Settings:</label>
+                    <div class="quality-grid">
+                        <div class="format-option">
+                            <input type="radio" id="quality-2160p" name="quality" value="2160p">
+                            <label for="quality-2160p" class="format-label">4K</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="quality-1440p" name="quality" value="1440p">
+                            <label for="quality-1440p" class="format-label">2K</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="quality-1080p" name="quality" value="1080p" checked>
+                            <label for="quality-1080p" class="format-label">1080p</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="quality-720p" name="quality" value="720p">
+                            <label for="quality-720p" class="format-label">720p</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="quality-480p" name="quality" value="480p">
+                            <label for="quality-480p" class="format-label">480p</label>
+                        </div>
+                        <div class="format-option">
+                            <input type="radio" id="quality-best" name="quality" value="best">
+                            <label for="quality-best" class="format-label">BEST</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="convert-btn" onclick="startConversion()">
+                    🎯 INITIALIZE CONVERSION PROTOCOL
+                </button>
+                
+                <div class="loading" id="loading">
+                    <div class="cyber-spinner"></div>
+                    <h3 style="color: #3a86ff; margin-bottom: 10px;">PROCESSING VIDEO DATA...</h3>
+                    <p style="color: #8892b0;">Quantum algorithms analyzing media stream...</p>
+                    <div id="progress-text" style="margin-top: 15px; color: #06ffa5; font-family: 'Orbitron', monospace;"></div>
+                </div>
+                
+                <div class="result-container" id="result">
+                    <h3 style="color: #06ffa5; margin-bottom: 20px; font-family: 'Orbitron', monospace;">✅ CONVERSION COMPLETE</h3>
+                    <div class="video-preview">
+                        <img class="video-thumbnail" id="video-thumbnail" src="" alt="Video thumbnail">
+                        <div class="video-info">
+                            <h3 id="video-title"></h3>
+                            <div class="video-meta">
+                                <div id="video-duration"></div>
+                                <div id="video-format"></div>
+                                <div id="video-size"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#" class="download-btn" id="download-btn" download>
+                        📥 DOWNLOAD CONVERTED FILE
+                    </a>
+                </div>
+                
+                <div class="error-container" id="error"></div>
+                
+                <div class="setup-info">
+                    <h3>✅ System Status</h3>
+                    <p>Backend server is running and ready for conversion!</p>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(6, 255, 165, 0.2); border-radius: 8px;">
+                        <strong>🚀 Ready to convert:</strong>
+                        <ul style="margin: 10px 0 0 20px; line-height: 1.6;">
+                            <li>Paste any YouTube URL above</li>
+                            <li>Select your preferred format and quality</li>
+                            <li>Click the conversion button</li>
+                            <li>Download your converted file!</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <span class="feature-icon">🎬</span>
+                        <div class="feature-title">Multi-Format Support</div>
+                        <div class="feature-desc">Convert to MP4, MOV, AVI, MKV, WEBM, and audio formats</div>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">⚡</span>
+                        <div class="feature-title">Ultra High Quality</div>
+                        <div class="feature-desc">Support up to 4K resolution with best quality settings</div>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">🚀</span>
+                        <div class="feature-title">Lightning Fast</div>
+                        <div class="feature-desc">Optimized conversion algorithms for maximum speed</div>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">🛡️</span>
+                        <div class="feature-title">Privacy Focused</div>
+                        <div class="feature-desc">No data collection, all processing done locally</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversionInProgress = false;
+
+        // Security Features - Disable right click and F12
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            if (e.keyCode == 123 || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 73) || 
+                (e.ctrlKey && e.shiftKey && e.keyCode == 74) || 
+                (e.ctrlKey && e.keyCode == 85)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        function updateStatus(text) {
+            document.getElementById('status-text').textContent = text;
+        }
+
+        function validateYouTubeURL(url) {
+            const patterns = [
+                /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[\w-]+/,
+                /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?.*v=[\w-]+/
+            ];
+            return patterns.some(pattern => pattern.test(url));
+        }
+
+        function extractVideoID(url) {
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+                /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        async function startConversion() {
+            if (conversionInProgress) return;
+
+            const url = document.getElementById('youtube-url').value.trim();
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const quality = document.querySelector('input[name="quality"]:checked').value;
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const convertBtn = document.querySelector('.convert-btn');
+            
+            // Reset states
+            loading.classList.remove('active');
+            result.classList.remove('active');
+            error.classList.remove('active');
+            
+            // Validate URL
+            if (!url) {
+                showError('ERROR: YouTube URL required for processing');
+                return;
+            }
+            
+            if (!validateYouTubeURL(url)) {
+                showError('ERROR: Invalid YouTube URL format detected');
+                return;
+            }
+            
+            const videoId = extractVideoID(url);
+            if (!videoId) {
+                showError('ERROR: Unable to extract video ID from URL');
+                return;
+            }
+            
+            // Start conversion process
+            conversionInProgress = true;
+            convertBtn.disabled = true;
+            loading.classList.add('active');
+            updateStatus(`CONVERTING TO ${format.toUpperCase()} • QUALITY: ${quality.toUpperCase()} • INITIALIZING...`);
+            
+            try {
+                // First get video info
+                document.getElementById('progress-text').textContent = 'Connecting to backend server...';
+                
+                const infoResponse = await fetch('http://localhost:5000/api/video-info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                
+                if (!infoResponse.ok) {
+                    throw new Error('Failed to get video info');
+                }
+                
+                const videoInfo = await infoResponse.json();
+                document.getElementById('progress-text').textContent = `Found video: ${videoInfo.title}`;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Start conversion
+                document.getElementById('progress-text').textContent = 'Starting conversion process...';
+                
+                const convertResponse = await fetch('http://localhost:5000/api/convert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, format, quality })
+                });
+                
+                if (!convertResponse.ok) {
+                    throw new Error('Failed to start conversion');
+                }
+                
+                const convertData = await convertResponse.json();
+                const conversionId = convertData.conversion_id;
+                
+                // Poll for progress
+                await pollConversionProgress(conversionId, videoInfo);
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                if (error.message.includes('fetch')) {
+                    showError('ERROR: Cannot connect to backend server. Make sure it\'s running on localhost:5000');
+                } else {
+                    showError(`ERROR: ${error.message}`);
+                }
+                updateStatus('ERROR: CONVERSION FAILED');
+                
+                conversionInProgress = false;
+                convertBtn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+        
+        async function pollConversionProgress(conversionId, videoInfo) {
+            const maxAttempts = 120; // 2 minutes max
+            let attempts = 0;
+            
+            const pollInterval = setInterval(async () => {
+                try {
+                    attempts++;
+                    
+                    const statusResponse = await fetch(`http://localhost:5000/api/status/${conversionId}`);
+                    if (!statusResponse.ok) {
+                        throw new Error('Failed to get conversion status');
+                    }
+                    
+                    const status = await statusResponse.json();
+                    
+                    // Update progress
+                    document.getElementById('progress-text').textContent = status.status;
+                    
+                    if (status.error) {
+                        clearInterval(pollInterval);
+                        showError(`ERROR: ${status.error}`);
+                        updateStatus('ERROR: CONVERSION FAILED');
+                        
+                        conversionInProgress = false;
+                        document.querySelector('.convert-btn').disabled = false;
+                        document.getElementById('loading').classList.remove('active');
+                        return;
+                    }
+                    
+                    if (status.completed) {
+                        clearInterval(pollInterval);
+                        
+                        // Show success result
+                        const format = document.querySelector('input[name="format"]:checked').value;
+                        const selectedQuality = document.querySelector('input[name="quality"]:checked').value;
+                        
+                        showResult({
+                            title: videoInfo.title,
+                            duration: formatDuration(videoInfo.duration),
+                            format: format.toUpperCase(),
+                            quality: selectedQuality.toUpperCase(),
+                            size: status.file_size_mb ? `${status.file_size_mb}MB` : 'Ready for download',
+                            thumbnail: videoInfo.thumbnail,
+                            downloadUrl: `http://localhost:5000/api/download/${conversionId}`
+                        });
+                        
+                        updateStatus('CONVERSION COMPLETE • READY FOR DOWNLOAD');
+                        
+                        conversionInProgress = false;
+                        document.querySelector('.convert-btn').disabled = false;
+                        document.getElementById('loading').classList.remove('active');
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        showError('ERROR: Conversion timeout');
+                        updateStatus('ERROR: CONVERSION TIMEOUT');
+                        
+                        conversionInProgress = false;
+                        document.querySelector('.convert-btn').disabled = false;
+                        document.getElementById('loading').classList.remove('active');
+                    }
+                    
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    showError(`ERROR: ${error.message}`);
+                    updateStatus('ERROR: STATUS CHECK FAILED');
+                    
+                    conversionInProgress = false;
+                    document.querySelector('.convert-btn').disabled = false;
+                    document.getElementById('loading').classList.remove('active');
+                }
+            }, 1000); // Check every second
+        }
+        
+        function formatDuration(seconds) {
+            if (!seconds) return 'Unknown';
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        function showResult(data) {
+            document.getElementById('video-title').textContent = data.title;
+            document.getElementById('video-duration').textContent = `Duration: ${data.duration}`;
+            document.getElementById('video-format').textContent = `Format: ${data.format}`;
+            document.getElementById('video-size').textContent = `Quality: ${data.quality} • Size: ${data.size}`;
+            document.getElementById('video-thumbnail').src = data.thumbnail;
+            document.getElementById('download-btn').href = data.downloadUrl;
+            
+            document.getElementById('result').classList.add('active');
+        }
+        
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.innerHTML = `<strong>⚠️ SYSTEM ERROR:</strong> ${message}`;
+            error.classList.add('active');
+            
+            setTimeout(() => {
+                error.classList.remove('active');
+            }, 5000);
+        }
+        
+        // Enable Enter key for conversion
+        document.getElementById('youtube-url').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !conversionInProgress) {
+                startConversion();
+            }
+        });
+        
+        // Add some dynamic effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate status bar
+            setInterval(() => {
+                if (!conversionInProgress) {
+                    const statuses = [
+                        'SYSTEM READY • WAITING FOR INPUT...',
+                        'QUANTUM CORES ONLINE • READY TO PROCESS',
+                        'NEURAL NETWORK ACTIVE • AWAITING COMMANDS',
+                        'CONVERSION ENGINE STANDBY • INPUT REQUIRED'
+                    ];
+                    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                    updateStatus(randomStatus);
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
