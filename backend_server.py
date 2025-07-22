@@ -9,6 +9,7 @@ import time
 from urllib.parse import urlparse, parse_qs
 
 app = Flask(__name__)
+CORS(app, origins=["https://oae2.github.io", "http://localhost:*"])
 CORS(app)  # Enable CORS for frontend
 
 # Global dict to store conversion progress
