@@ -1,0 +1,12 @@
+2. render.yaml (optional แต่แนะนำ)
+----------------------------------
+services:
+  - type: web
+    name: youtube-converter-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT backend_server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.16
