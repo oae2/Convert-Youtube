@@ -790,7 +790,7 @@
                 // First get video info
                 document.getElementById('progress-text').textContent = 'Connecting to backend server...';
                 
-                const infoResponse = await fetch('http://localhost:5000/api/video-info', {
+                const infoResponse = await fetch('https://convert-youtube.onrender.com/api/video-info', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url })
@@ -807,7 +807,7 @@
                 // Start conversion
                 document.getElementById('progress-text').textContent = 'Starting conversion process...';
                 
-                const convertResponse = await fetch('http://localhost:5000/api/convert', {
+                const convertResponse = await fetch('https://convert-youtube.onrender.com/api/video-info/api/convert', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url, format, quality })
@@ -846,7 +846,7 @@
                 try {
                     attempts++;
                     
-                    const statusResponse = await fetch(`http://localhost:5000/api/status/${conversionId}`);
+                    const statusResponse = await fetch(`https://convert-youtube.onrender.com/api/video-info/api/status/${conversionId}`);
                     if (!statusResponse.ok) {
                         throw new Error('Failed to get conversion status');
                     }
@@ -881,7 +881,7 @@
                             quality: selectedQuality.toUpperCase(),
                             size: status.file_size_mb ? `${status.file_size_mb}MB` : 'Ready for download',
                             thumbnail: videoInfo.thumbnail,
-                            downloadUrl: `http://localhost:5000/api/download/${conversionId}`
+                            downloadUrl: `https://convert-youtube.onrender.com/api/video-info/api/download/${conversionId}`
                         });
                         
                         updateStatus('CONVERSION COMPLETE • READY FOR DOWNLOAD');
