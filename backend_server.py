@@ -1,4 +1,4 @@
-# backend_server.py - Enhanced with Browser Cookies + API Key Rotation
+# backend_server.py - Fixed for Cloud Deployment (No Browser Cookies)
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
@@ -36,23 +36,19 @@ def get_random_api_key():
     ]
     return random.choice(api_keys)
 
-def get_browser_cookies():
-    """Try different browser cookie sources"""
-    browsers = [
-        ('chrome', None, None, None),
-        ('firefox', None, None, None), 
-        ('edge', None, None, None),
-        ('safari', None, None, None),
+def is_cloud_environment():
+    """Detect if running on cloud platform"""
+    cloud_indicators = [
+        'RENDER',
+        'HEROKU', 
+        'VERCEL',
+        'RAILWAY',
+        'AWS',
+        'GOOGLE_CLOUD'
     ]
-    
-    for browser_config in browsers:
-        try:
-            print(f"🍪 Attempting to use {browser_config[0]} cookies...")
-            return browser_config
-        except Exception as e:
-            print(f"⚠️ {browser_config[0]} cookies failed: {str(e)}")
-            continue
-    return None
+    return any(indicator in os.environ.get(key, '') for key in os.environ for indicator in cloud_indicators) or \
+           '/opt/render' in os.getcwd() or \
+           '/app' in os.getcwd()
 
 def progress_hook(d):
     """Progress hook for yt-dlp"""
@@ -80,20 +76,20 @@ def extract_video_id(url):
         return parsed.path[1:]
     return None
 
-def get_updated_ydl_opts():
-    """Get enhanced yt-dlp options with cookies and API rotation"""
+def get_optimized_ydl_opts():
+    """Get optimized yt-dlp options for cloud deployment"""
     
     # Latest user agents from real browsers
     user_agents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
     ]
     
-    # Base options
+    is_cloud = is_cloud_environment()
+    
+    # Base options optimized for cloud
     opts = {
         # Enhanced headers to mimic real browser
         'http_headers': {
@@ -124,19 +120,19 @@ def get_updated_ydl_opts():
             }
         },
         
-        # Network and retry settings
-        'socket_timeout': 60,
-        'retries': 12,
-        'fragment_retries': 12,
+        # Network settings optimized for cloud
+        'socket_timeout': 30 if is_cloud else 60,
+        'retries': 5 if is_cloud else 12,
+        'fragment_retries': 5 if is_cloud else 12,
         'retry_sleep_functions': {
-            'http': lambda n: min(2 ** n, 45),
-            'fragment': lambda n: min(2 ** n, 45),
+            'http': lambda n: min(2 ** n, 15),
+            'fragment': lambda n: min(2 ** n, 15),
         },
         
-        # Random delays to appear human-like
-        'sleep_interval': random.uniform(2, 4),
-        'max_sleep_interval': random.uniform(4, 8),
-        'sleep_interval_requests': random.uniform(1, 3),
+        # Shorter delays for cloud to avoid timeout
+        'sleep_interval': random.uniform(0.5, 1.5) if is_cloud else random.uniform(2, 4),
+        'max_sleep_interval': random.uniform(1.5, 3) if is_cloud else random.uniform(4, 8),
+        'sleep_interval_requests': random.uniform(0.3, 1) if is_cloud else random.uniform(1, 3),
         
         # Enhanced bypass options
         'format_sort': ['res:720', 'ext:mp4', 'codec'],
@@ -153,26 +149,40 @@ def get_updated_ydl_opts():
         'writeinfojson': False,
     }
     
-    # Try to add browser cookies (enhanced method)
-    try:
-        browser_cookies = get_browser_cookies()
-        if browser_cookies:
-            opts['cookiesfrombrowser'] = browser_cookies
-            print(f"🍪 Successfully configured {browser_cookies[0]} cookies")
-        else:
-            print("⚠️ No browser cookies available - continuing without cookies")
-    except Exception as e:
-        print(f"⚠️ Browser cookies error: {str(e)} - continuing without cookies")
+    # Only try cookies if NOT in cloud environment
+    if not is_cloud:
+        try:
+            print("🍪 Local environment detected - attempting browser cookies...")
+            browsers = [
+                ('chrome', None, None, None),
+                ('firefox', None, None, None), 
+                ('edge', None, None, None),
+            ]
+            
+            for browser_config in browsers:
+                try:
+                    opts['cookiesfrombrowser'] = browser_config
+                    print(f"🍪 Successfully configured {browser_config[0]} cookies")
+                    break
+                except Exception as e:
+                    print(f"⚠️ {browser_config[0]} cookies failed: {str(e)}")
+                    continue
+        except Exception as e:
+            print(f"⚠️ Browser cookies error: {str(e)}")
+    else:
+        print("☁️ Cloud environment detected - skipping browser cookies")
     
     return opts
 
-def try_alternative_extractors(url):
-    """Try different extraction methods with enhanced options"""
+def try_fast_extractors(url):
+    """Try different extraction methods optimized for cloud"""
+    
+    is_cloud = is_cloud_environment()
     
     extractors = [
-        # Method 1: iOS client with cookies (highest success rate)
+        # Method 1: iOS client (highest success rate)
         {
-            'name': 'iOS Client Enhanced',
+            'name': 'iOS Fast',
             'opts': {
                 'extractor_args': {
                     'youtube': {
@@ -185,9 +195,9 @@ def try_alternative_extractors(url):
             }
         },
         
-        # Method 2: Android client with API rotation
+        # Method 2: Android client
         {
-            'name': 'Android Client Enhanced', 
+            'name': 'Android Fast', 
             'opts': {
                 'extractor_args': {
                     'youtube': {
@@ -199,9 +209,9 @@ def try_alternative_extractors(url):
             }
         },
         
-        # Method 3: TV embedded with bypass
+        # Method 3: TV embedded (only if first two fail)
         {
-            'name': 'TV Embedded Enhanced',
+            'name': 'TV Fast',
             'opts': {
                 'extractor_args': {
                     'youtube': {
@@ -212,64 +222,33 @@ def try_alternative_extractors(url):
                 }
             }
         },
-        
-        # Method 4: Web client with full bypass
-        {
-            'name': 'Web Bypass Enhanced',
-            'opts': {
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['web'],
-                        'player_skip': ['configs', 'webpage'],
-                        'skip': ['hls', 'dash'],
-                        'innertube_key': [get_random_api_key()],
-                        'player_params': ['CgIQBg%3D%3D'],
-                    }
-                }
-            }
-        },
-        
-        # Method 5: Mobile web fallback
-        {
-            'name': 'Mobile Web Fallback',
-            'opts': {
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['mweb'],
-                        'innertube_key': [get_random_api_key()],
-                    }
-                },
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
-                }
-            }
-        }
     ]
     
-    for extractor in extractors:
+    # Limit attempts in cloud environment
+    max_attempts = 2 if is_cloud else 3
+    
+    for i, extractor in enumerate(extractors[:max_attempts]):
         try:
-            print(f"🔄 Trying {extractor['name']}...")
+            print(f"🔄 Trying {extractor['name']} ({i+1}/{max_attempts})...")
             
             # Combine base options with extractor-specific options
-            ydl_opts = get_updated_ydl_opts()
+            ydl_opts = get_optimized_ydl_opts()
             
             # Merge extractor-specific options
             if 'extractor_args' in extractor['opts']:
                 ydl_opts['extractor_args']['youtube'].update(extractor['opts']['extractor_args']['youtube'])
             
-            if 'http_headers' in extractor['opts']:
-                ydl_opts['http_headers'].update(extractor['opts']['http_headers'])
-            
-            # Add random delay between attempts (longer delays)
-            delay = random.uniform(3, 7)
-            print(f"⏱️ Waiting {delay:.1f}s before attempt...")
+            # Shorter delay in cloud environment
+            delay = random.uniform(1, 2) if is_cloud else random.uniform(2, 4)
+            print(f"⏱️ Cloud-optimized delay: {delay:.1f}s...")
             time.sleep(delay)
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
                 if info:
-                    print(f"✅ Success with {extractor['name']} using API key: {ydl_opts['extractor_args']['youtube']['innertube_key'][0][:20]}...")
+                    api_key_short = ydl_opts['extractor_args']['youtube']['innertube_key'][0][:20]
+                    print(f"✅ Success with {extractor['name']} using API key: {api_key_short}...")
                     return info, extractor['name']
                     
         except Exception as e:
@@ -280,7 +259,7 @@ def try_alternative_extractors(url):
 
 @app.route('/api/video-info', methods=['POST'])
 def get_video_info():
-    """Get video information using enhanced extraction methods"""
+    """Get video information using cloud-optimized extraction"""
     try:
         data = request.get_json()
         url = data.get('url')
@@ -293,10 +272,10 @@ def get_video_info():
             return jsonify({'error': 'Invalid YouTube URL'}), 400
             
         print(f"🔍 Getting info for video: {video_id}")
-        print(f"🔑 Using enhanced extraction with cookies + API rotation")
+        print(f"🔑 Using cloud-optimized extraction with API rotation")
         
-        # Try alternative extractors with enhanced methods
-        info, method = try_alternative_extractors(url)
+        # Try fast extractors optimized for cloud
+        info, method = try_fast_extractors(url)
         
         if info:
             return jsonify({
@@ -308,24 +287,24 @@ def get_video_info():
                 'video_id': video_id,
                 'extraction_method': method,
                 'available_formats': len(info.get('formats', [])),
-                'enhanced_features': True,
+                'cloud_optimized': True,
                 'success': True
             })
         else:
             return jsonify({
-                'error': 'Unable to extract video information with enhanced methods',
+                'error': 'Unable to extract video information',
                 'suggestion': 'Video may be private, age-restricted, or heavily protected',
-                'tried_methods': 'iOS, Android, TV, Web, Mobile with cookies + API rotation',
+                'tried_methods': 'iOS Fast, Android Fast, TV Fast with API rotation',
                 'success': False
             }), 400
             
     except Exception as e:
-        print(f"❌ Enhanced video info error: {str(e)}")
-        return jsonify({'error': f'Enhanced extraction failed: {str(e)}'}), 500
+        print(f"❌ Cloud-optimized video info error: {str(e)}")
+        return jsonify({'error': f'Cloud extraction failed: {str(e)}'}), 500
 
 @app.route('/api/convert', methods=['POST'])
 def convert_video():
-    """Start video conversion using enhanced extraction methods"""
+    """Start video conversion using cloud-optimized methods"""
     try:
         data = request.get_json()
         url = data.get('url')
@@ -339,13 +318,13 @@ def convert_video():
         conversion_id = f"conv_{int(time.time())}"
         conversion_status[conversion_id] = ConversionProgress()
         
-        print(f"🚀 Starting enhanced conversion: {format_type.upper()} @ {quality.upper()}")
+        print(f"🚀 Starting cloud-optimized conversion: {format_type.upper()} @ {quality.upper()}")
         print(f"📹 URL: {url}")
-        print(f"🛡️ Using cookies + API rotation + multiple clients")
+        print(f"🛡️ Using API rotation + fast extraction")
         
         # Start conversion in background thread
         thread = threading.Thread(
-            target=perform_conversion_enhanced,
+            target=perform_conversion_fast,
             args=(conversion_id, url, format_type, quality)
         )
         thread.start()
@@ -353,20 +332,20 @@ def convert_video():
         return jsonify({
             'conversion_id': conversion_id,
             'status': 'started',
-            'message': 'Enhanced conversion started with cookies + API rotation',
-            'features': ['browser_cookies', 'api_rotation', 'multiple_clients', 'age_bypass']
+            'message': 'Cloud-optimized conversion started with API rotation',
+            'features': ['api_rotation', 'fast_extraction', 'cloud_optimized']
         })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def perform_conversion_enhanced(conversion_id, url, format_type, quality):
-    """Perform conversion with enhanced methods"""
+def perform_conversion_fast(conversion_id, url, format_type, quality):
+    """Perform conversion with cloud-optimized methods"""
     try:
         # Create temporary directory
         temp_dir = tempfile.mkdtemp()
         
-        conversion_status[conversion_id].status = "Initializing enhanced conversion..."
+        conversion_status[conversion_id].status = "Initializing cloud conversion..."
         
         # Quality selector with smart approach
         if quality == 'best':
@@ -375,28 +354,29 @@ def perform_conversion_enhanced(conversion_id, url, format_type, quality):
             height = quality.replace('p', '')
             format_selector = f'best[height<={height}]/bestvideo[height<={height}]+bestaudio/best[height<=720]'
         
-        print(f"🎯 Using enhanced format selector: {format_selector}")
+        print(f"🎯 Using cloud format selector: {format_selector}")
         
         # Filename template
         quality_suffix = f"_{quality}" if quality != 'best' else "_best"
         filename_template = f'%(title)s{quality_suffix}.%(ext)s'
         
-        # Enhanced extraction methods for download
+        # Fast extraction methods for download
+        is_cloud = is_cloud_environment()
         extractors = [
-            {'name': 'iOS Enhanced', 'client': ['ios'], 'priority': 1},
-            {'name': 'Android Enhanced', 'client': ['android'], 'priority': 2}, 
-            {'name': 'TV Enhanced', 'client': ['tv_embedded'], 'priority': 3},
-            {'name': 'Web Enhanced', 'client': ['web'], 'priority': 4},
-            {'name': 'Mobile Enhanced', 'client': ['mweb'], 'priority': 5},
+            {'name': 'iOS Cloud', 'client': ['ios']},
+            {'name': 'Android Cloud', 'client': ['android']}, 
         ]
         
-        for extractor in extractors:
+        # Limit to 2 attempts in cloud
+        max_attempts = 2 if is_cloud else 3
+        
+        for i, extractor in enumerate(extractors[:max_attempts]):
             try:
                 conversion_status[conversion_id].status = f"Trying {extractor['name']} extraction..."
-                print(f"🔄 Download attempt {extractor['priority']}/5 with {extractor['name']} client")
+                print(f"🔄 Download attempt {i+1}/{max_attempts} with {extractor['name']} client")
                 
-                # Build enhanced yt-dlp options
-                ydl_opts = get_updated_ydl_opts()
+                # Build optimized yt-dlp options
+                ydl_opts = get_optimized_ydl_opts()
                 ydl_opts.update({
                     'format': format_selector,
                     'outtmpl': os.path.join(temp_dir, filename_template),
@@ -404,7 +384,7 @@ def perform_conversion_enhanced(conversion_id, url, format_type, quality):
                     'extractor_args': {
                         'youtube': {
                             'player_client': extractor['client'],
-                            'innertube_key': [get_random_api_key()],  # Fresh API key for each attempt
+                            'innertube_key': [get_random_api_key()],  # Fresh API key
                             'player_params': ['CgIQBg%3D%3D'],
                         }
                     }
@@ -428,9 +408,9 @@ def perform_conversion_enhanced(conversion_id, url, format_type, quality):
                 
                 conversion_status[conversion_id].status = f"Downloading with {extractor['name']}..."
                 
-                # Enhanced random delay with priority-based timing
-                delay = random.uniform(4, 8) + (extractor['priority'] * 1)
-                print(f"⏱️ Enhanced delay: {delay:.1f}s for attempt {extractor['priority']}")
+                # Cloud-optimized delay
+                delay = random.uniform(1, 2) if is_cloud else random.uniform(3, 5)
+                print(f"⏱️ Cloud delay: {delay:.1f}s for attempt {i+1}")
                 time.sleep(delay)
                 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -441,7 +421,7 @@ def perform_conversion_enhanced(conversion_id, url, format_type, quality):
                 video_files = [f for f in all_files if not f.endswith('.info.json')]
                 
                 if video_files:
-                    print(f"✅ Enhanced download success with {extractor['name']}")
+                    print(f"✅ Cloud download success with {extractor['name']}")
                     break
                 else:
                     print(f"❌ No files with {extractor['name']}")
@@ -451,7 +431,7 @@ def perform_conversion_enhanced(conversion_id, url, format_type, quality):
                 print(f"❌ {extractor['name']} failed: {str(e)}")
                 continue
         else:
-            raise Exception("All enhanced extraction methods failed")
+            raise Exception("All cloud extraction methods failed")
         
         # Process downloaded files
         conversion_status[conversion_id].status = "Processing downloaded files..."
@@ -465,18 +445,18 @@ def perform_conversion_enhanced(conversion_id, url, format_type, quality):
             
             file_size_mb = os.path.getsize(conversion_status[conversion_id].file_path) / 1024 / 1024
             
-            print(f"🎉 Enhanced conversion complete: {main_file}")
+            print(f"🎉 Cloud conversion complete: {main_file}")
             print(f"📊 Final file size: {file_size_mb:.1f}MB")
             
-            conversion_status[conversion_id].status = f"Enhanced conversion complete - {file_size_mb:.1f}MB"
+            conversion_status[conversion_id].status = f"Cloud conversion complete - {file_size_mb:.1f}MB"
             conversion_status[conversion_id].progress = 100
         else:
-            raise Exception("No video file found after enhanced conversion")
+            raise Exception("No video file found after cloud conversion")
         
     except Exception as e:
         conversion_status[conversion_id].error = str(e)
-        conversion_status[conversion_id].status = f"Enhanced conversion error: {str(e)}"
-        print(f"❌ Enhanced conversion error: {str(e)}")
+        conversion_status[conversion_id].status = f"Cloud conversion error: {str(e)}"
+        print(f"❌ Cloud conversion error: {str(e)}")
 
 @app.route('/api/status/<conversion_id>', methods=['GET'])
 def get_conversion_status(conversion_id):
@@ -497,7 +477,7 @@ def get_conversion_status(conversion_id):
         'completed': status.progress >= 100 and not status.error,
         'file_available': status.file_path is not None,
         'file_size_mb': round(file_size_mb, 1) if file_size_mb else None,
-        'enhanced': True
+        'cloud_optimized': True
     })
 
 @app.route('/api/download/<conversion_id>', methods=['GET'])
@@ -521,21 +501,20 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy', 
-        'message': 'Enhanced YouTube Converter API with cookies + API rotation',
-        'features': ['browser_cookies', 'api_key_rotation', 'multiple_clients', 'age_bypass', 'geo_bypass']
+        'message': 'Cloud-Optimized YouTube Converter API',
+        'environment': 'cloud' if is_cloud_environment() else 'local',
+        'features': ['api_key_rotation', 'fast_extraction', 'cloud_optimized', 'no_browser_cookies']
     })
 
 if __name__ == '__main__':
-    print("🚀 Starting Enhanced YouTube Converter Backend...")
+    print("🚀 Starting Cloud-Optimized YouTube Converter Backend...")
     print("📡 API available at: https://convert-youtube.onrender.com")
-    print("🔧 Enhanced yt-dlp with 2025 advanced bypass methods!")
-    print("🍪 Browser cookies integration enabled!")
+    print("☁️ Cloud environment optimizations enabled!")
     print("🔑 API key rotation system active!")
-    print("📱 iOS/Android/TV/Web/Mobile clients enabled!")
-    print("🛡️ Advanced anti-detection with real browser simulation!")
-    print("🎯 Multiple fallback extraction methods with priority system!")
-    print("🌍 Geographic bypass with random countries!")
-    print("⚡ Age restriction bypass enabled!")
+    print("📱 iOS/Android fast clients enabled!")
+    print("⚡ Reduced delays for cloud deployment!")
+    print("🚫 Browser cookies disabled for cloud!")
+    print("🎯 Fast extraction methods prioritized!")
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
