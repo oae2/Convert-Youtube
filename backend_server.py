@@ -7,7 +7,6 @@ import tempfile
 import threading
 import time
 import random
-import requests
 from urllib.parse import urlparse, parse_qs
 
 app = Flask(__name__)
