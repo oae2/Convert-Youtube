@@ -1,4 +1,4 @@
-# backend_server.py - Updated with detailed quality control and debugging
+# backend_server.py - Fixed with YouTube bot protection
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
@@ -10,7 +10,6 @@ from urllib.parse import urlparse, parse_qs
 
 app = Flask(__name__)
 CORS(app, origins=["https://oae2.github.io", "http://localhost:*"])
-CORS(app)  # Enable CORS for frontend
 
 # Global dict to store conversion progress
 conversion_status = {}
@@ -76,6 +75,42 @@ def get_format_selector(format_type, quality):
     print(f"📐 Quality filter: Looking for exactly {height}p or closest below")
     return format_selector
 
+def get_ydl_opts_with_bypass():
+    """Get yt-dlp options with bot protection bypass"""
+    return {
+        # User Agent to appear as a regular browser
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Accept-Encoding': 'gzip,deflate',
+            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+            'Keep-Alive': '300',
+            'Connection': 'keep-alive',
+        },
+        # Additional options to bypass bot detection
+        'extractor_args': {
+            'youtube': {
+                'skip': ['hls', 'dash'],  # Skip problematic formats
+                'player_client': ['android', 'web'],  # Use mobile client
+            }
+        },
+        # Sleep between requests to appear more human-like
+        'sleep_interval': 1,
+        'max_sleep_interval': 3,
+        # Retry on errors
+        'retries': 3,
+        'fragment_retries': 3,
+        # Don't check certificates to avoid some blocks
+        'no_check_certificate': True,
+        # Additional bypass options
+        'geo_bypass': True,
+        'geo_bypass_country': 'US',
+        # Suppress warnings
+        'quiet': True,
+        'no_warnings': True,
+    }
+
 @app.route('/api/video-info', methods=['POST'])
 def get_video_info():
     """Get video information without downloading"""
@@ -90,10 +125,8 @@ def get_video_info():
         if not video_id:
             return jsonify({'error': 'Invalid YouTube URL'}), 400
             
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-        }
+        # Use bypass options
+        ydl_opts = get_ydl_opts_with_bypass()
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -108,7 +141,8 @@ def get_video_info():
             })
             
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Video info error: {str(e)}")
+        return jsonify({'error': f'Failed to get video info: {str(e)}'}), 500
 
 @app.route('/api/convert', methods=['POST'])
 def convert_video():
@@ -160,13 +194,13 @@ def perform_conversion(conversion_id, url, format_type, quality):
         quality_suffix = f"_{quality}" if quality != 'best' else "_best"
         filename_template = f'%(title)s{quality_suffix}.%(ext)s'
         
-        # Configure yt-dlp options
-        ydl_opts = {
+        # Configure yt-dlp options with bypass
+        ydl_opts = get_ydl_opts_with_bypass()
+        ydl_opts.update({
             'format': format_selector,
             'outtmpl': os.path.join(temp_dir, filename_template),
             'progress_hooks': [lambda d: progress_hook({**d, 'conversion_id': conversion_id})],
-            'writeinfojson': True,  # Write info file for debugging
-        }
+        })
         
         # Add format-specific options
         if format_type == 'mp3':
@@ -188,27 +222,6 @@ def perform_conversion(conversion_id, url, format_type, quality):
         conversion_status[conversion_id].status = "Connecting to YouTube..."
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # First extract info to show available formats
-            info = ydl.extract_info(url, download=False)
-            
-            print(f"📋 Available formats for {info.get('title', 'Unknown')}:")
-            formats = info.get('formats', [])
-            for fmt in formats[-5:]:  # Show last 5 formats
-                height = fmt.get('height', 'audio')
-                ext = fmt.get('ext', 'unknown')
-                filesize = fmt.get('filesize')
-                size_mb = f"{filesize/1024/1024:.1f}MB" if filesize else "Unknown size"
-                print(f"  Format {fmt.get('format_id')}: {height}p {ext} - {size_mb}")
-            
-            # Find what format will actually be selected
-            if quality != 'best':
-                height_limit = int(quality.replace('p', ''))
-                matching_formats = [f for f in formats if f.get('height') and f.get('height') <= height_limit]
-                if matching_formats:
-                    best_match = max(matching_formats, key=lambda x: x.get('height', 0))
-                    print(f"🎯 Will select: {best_match.get('format_id')} - {best_match.get('height')}p {best_match.get('ext')}")
-                    conversion_status[conversion_id].status = f"Will download {best_match.get('height')}p quality..."
-            
             # Start actual download
             conversion_status[conversion_id].status = "Downloading video..."
             ydl.download([url])
@@ -246,15 +259,6 @@ def perform_conversion(conversion_id, url, format_type, quality):
         conversion_status[conversion_id].error = str(e)
         conversion_status[conversion_id].status = f"Error: {str(e)}"
         print(f"❌ Conversion error: {str(e)}")
-        
-        # Debug: List all files in temp directory on error
-        try:
-            if 'temp_dir' in locals():
-                print(f"🔍 Debug - Files in {temp_dir}:")
-                for file in os.listdir(temp_dir):
-                    print(f"  {file}")
-        except:
-            pass
 
 @app.route('/api/status/<conversion_id>', methods=['GET'])
 def get_conversion_status(conversion_id):
@@ -302,9 +306,9 @@ def health_check():
 if __name__ == '__main__':
     print("🚀 Starting YouTube Converter Backend...")
     print("📡 API will be available at: https://convert-youtube.onrender.com")
-    print("🔧 Make sure yt-dlp and ffmpeg are installed!")
+    print("🔧 yt-dlp with YouTube bot protection enabled!")
     print("⚡ Quality selection system is now active!")
-    print("🔍 Debug mode enabled - will show detailed format info!")
+    print("🛡️ Anti-bot measures activated!")
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
