@@ -1,4 +1,4 @@
-# backend_server.py - Fixed with YouTube bot protection
+# backend_server.py - Advanced YouTube bot bypass
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
@@ -6,6 +6,8 @@ import os
 import tempfile
 import threading
 import time
+import random
+import requests
 from urllib.parse import urlparse, parse_qs
 
 app = Flask(__name__)
@@ -47,69 +49,96 @@ def extract_video_id(url):
         return parsed.path[1:]
     return None
 
+def get_random_user_agent():
+    """Get random user agent to avoid detection"""
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+    ]
+    return random.choice(user_agents)
+
+def get_ydl_opts_advanced_bypass():
+    """Advanced yt-dlp options with multiple bypass methods"""
+    return {
+        # Randomized headers
+        'http_headers': {
+            'User-Agent': get_random_user_agent(),
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        },
+        # Multiple client strategies
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web', 'tv_embedded'],
+                'player_skip': ['configs', 'webpage'],
+                'skip': ['hls', 'dash'],
+                'innertube_host': ['www.youtube.com', 'm.youtube.com'],
+                'innertube_key': ['AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'],
+            }
+        },
+        # Advanced bypass options
+        'format_sort': ['res', 'ext'],
+        'writesubtitles': False,
+        'writeinfojson': False,
+        'writedescription': False,
+        'writethumbnail': False,
+        'writeautomaticsub': False,
+        # Network settings
+        'socket_timeout': 30,
+        'retries': 5,
+        'fragment_retries': 5,
+        'retry_sleep_functions': {
+            'http': lambda n: min(4 ** n, 60),
+            'fragment': lambda n: min(4 ** n, 60),
+        },
+        # Delays to appear human
+        'sleep_interval': random.uniform(1, 3),
+        'max_sleep_interval': random.uniform(3, 5),
+        'sleep_interval_requests': random.uniform(0.5, 1.5),
+        # Geo and certificate bypass
+        'geo_bypass': True,
+        'geo_bypass_country': 'US',
+        'no_check_certificate': True,
+        'prefer_insecure': False,
+        # Suppress output
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': False,
+    }
+
 def get_format_selector(format_type, quality):
     """Get format selector for yt-dlp with proper quality filtering"""
     
     if quality == 'best':
-        # Return best quality available
+        # Return best quality available with fallbacks
         if format_type == 'mp4':
-            return 'best[ext=mp4]/best'
+            return 'best[ext=mp4][height<=1080]/best[ext=mp4]/best[height<=1080]/best'
         elif format_type == 'webm':
-            return 'best[ext=webm]/best'
+            return 'best[ext=webm][height<=1080]/best[ext=webm]/best[height<=1080]/best'
         else:
-            return 'best'
+            return 'best[height<=1080]/best'
     
     # Extract height from quality string
     height = quality.replace('p', '')
     
-    # More aggressive quality filtering
+    # Conservative quality filtering with fallbacks
     if format_type == 'mp4':
-        # Force specific height with strict filtering
-        format_selector = f'best[height={height}][ext=mp4]/best[height<={height}][ext=mp4]/bestvideo[height={height}]+bestaudio[ext=m4a]/bestvideo[height<={height}]+bestaudio'
+        format_selector = f'best[height<={height}][ext=mp4]/bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/best[height<={height}]/best'
     elif format_type == 'webm':
-        format_selector = f'best[height={height}][ext=webm]/best[height<={height}][ext=webm]/bestvideo[height={height}]+bestaudio'
+        format_selector = f'best[height<={height}][ext=webm]/bestvideo[height<={height}][ext=webm]+bestaudio/best[height<={height}]/best'
     else:
-        # For other formats, be more specific about quality
-        format_selector = f'bestvideo[height={height}]+bestaudio/bestvideo[height<={height}]+bestaudio/best[height<={height}]'
+        format_selector = f'best[height<={height}]/bestvideo[height<={height}]+bestaudio/best'
     
-    print(f"📐 Quality filter: Looking for exactly {height}p or closest below")
+    print(f"📐 Quality filter: {height}p or lower")
     return format_selector
-
-def get_ydl_opts_with_bypass():
-    """Get yt-dlp options with bot protection bypass"""
-    return {
-        # User Agent to appear as a regular browser
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
-            'Accept-Encoding': 'gzip,deflate',
-            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-            'Keep-Alive': '300',
-            'Connection': 'keep-alive',
-        },
-        # Additional options to bypass bot detection
-        'extractor_args': {
-            'youtube': {
-                'skip': ['hls', 'dash'],  # Skip problematic formats
-                'player_client': ['android', 'web'],  # Use mobile client
-            }
-        },
-        # Sleep between requests to appear more human-like
-        'sleep_interval': 1,
-        'max_sleep_interval': 3,
-        # Retry on errors
-        'retries': 3,
-        'fragment_retries': 3,
-        # Don't check certificates to avoid some blocks
-        'no_check_certificate': True,
-        # Additional bypass options
-        'geo_bypass': True,
-        'geo_bypass_country': 'US',
-        # Suppress warnings
-        'quiet': True,
-        'no_warnings': True,
-    }
 
 @app.route('/api/video-info', methods=['POST'])
 def get_video_info():
@@ -125,20 +154,46 @@ def get_video_info():
         if not video_id:
             return jsonify({'error': 'Invalid YouTube URL'}), 400
             
-        # Use bypass options
-        ydl_opts = get_ydl_opts_with_bypass()
+        print(f"🔍 Getting info for video: {video_id}")
         
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            
-            return jsonify({
-                'title': info.get('title'),
-                'duration': info.get('duration'),
-                'thumbnail': info.get('thumbnail'),
-                'uploader': info.get('uploader'),
-                'view_count': info.get('view_count'),
-                'video_id': video_id
-            })
+        # Try multiple extraction methods
+        methods = [
+            ('Android Client', {'extractor_args': {'youtube': {'player_client': ['android']}}}),
+            ('Web Client', {'extractor_args': {'youtube': {'player_client': ['web']}}}),
+            ('TV Embedded', {'extractor_args': {'youtube': {'player_client': ['tv_embedded']}}}),
+        ]
+        
+        for method_name, extra_opts in methods:
+            try:
+                print(f"🔄 Trying {method_name}...")
+                
+                ydl_opts = get_ydl_opts_advanced_bypass()
+                ydl_opts.update(extra_opts)
+                
+                # Add random delay
+                time.sleep(random.uniform(1, 2))
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    
+                    print(f"✅ Success with {method_name}")
+                    
+                    return jsonify({
+                        'title': info.get('title', 'Unknown Title'),
+                        'duration': info.get('duration', 0),
+                        'thumbnail': info.get('thumbnail', ''),
+                        'uploader': info.get('uploader', 'Unknown'),
+                        'view_count': info.get('view_count', 0),
+                        'video_id': video_id,
+                        'method': method_name
+                    })
+                    
+            except Exception as e:
+                print(f"❌ {method_name} failed: {str(e)}")
+                continue
+        
+        # If all methods fail, return a generic error
+        return jsonify({'error': 'Unable to extract video info. Video may be private, restricted, or require authentication.'}), 400
             
     except Exception as e:
         print(f"❌ Video info error: {str(e)}")
@@ -179,7 +234,7 @@ def convert_video():
         return jsonify({'error': str(e)}), 500
 
 def perform_conversion(conversion_id, url, format_type, quality):
-    """Perform the actual video conversion"""
+    """Perform the actual video conversion with multiple fallback methods"""
     try:
         # Create temporary directory
         temp_dir = tempfile.mkdtemp()
@@ -194,38 +249,69 @@ def perform_conversion(conversion_id, url, format_type, quality):
         quality_suffix = f"_{quality}" if quality != 'best' else "_best"
         filename_template = f'%(title)s{quality_suffix}.%(ext)s'
         
-        # Configure yt-dlp options with bypass
-        ydl_opts = get_ydl_opts_with_bypass()
-        ydl_opts.update({
-            'format': format_selector,
-            'outtmpl': os.path.join(temp_dir, filename_template),
-            'progress_hooks': [lambda d: progress_hook({**d, 'conversion_id': conversion_id})],
-        })
+        # Try multiple extraction methods for download
+        methods = [
+            ('Android Client', {'extractor_args': {'youtube': {'player_client': ['android']}}}),
+            ('TV Embedded', {'extractor_args': {'youtube': {'player_client': ['tv_embedded']}}}),
+            ('Web Client', {'extractor_args': {'youtube': {'player_client': ['web']}}}),
+        ]
         
-        # Add format-specific options
-        if format_type == 'mp3':
-            ydl_opts.update({
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-            })
-        elif format_type in ['mov', 'avi', 'mkv']:
-            # For these formats, we need to convert after download
-            ydl_opts['postprocessors'] = [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': format_type,
-            }]
+        for method_name, extra_opts in methods:
+            try:
+                conversion_status[conversion_id].status = f"Trying {method_name}..."
+                print(f"🔄 Download attempt with {method_name}")
+                
+                # Configure yt-dlp options with method-specific settings
+                ydl_opts = get_ydl_opts_advanced_bypass()
+                ydl_opts.update(extra_opts)
+                ydl_opts.update({
+                    'format': format_selector,
+                    'outtmpl': os.path.join(temp_dir, filename_template),
+                    'progress_hooks': [lambda d: progress_hook({**d, 'conversion_id': conversion_id})],
+                })
+                
+                # Add format-specific options
+                if format_type == 'mp3':
+                    ydl_opts.update({
+                        'format': 'bestaudio/best',
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': 'mp3',
+                            'preferredquality': '192',
+                        }],
+                    })
+                elif format_type in ['mov', 'avi', 'mkv']:
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegVideoConvertor',
+                        'preferedformat': format_type,
+                    }]
+                
+                conversion_status[conversion_id].status = f"Downloading with {method_name}..."
+                
+                # Random delay between attempts
+                time.sleep(random.uniform(2, 4))
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
+                
+                # Check if download succeeded
+                all_files = os.listdir(temp_dir)
+                video_files = [f for f in all_files if not f.endswith('.info.json')]
+                
+                if video_files:
+                    print(f"✅ Download success with {method_name}")
+                    break
+                else:
+                    print(f"❌ No files downloaded with {method_name}")
+                    continue
+                    
+            except Exception as e:
+                print(f"❌ {method_name} download failed: {str(e)}")
+                continue
+        else:
+            # All methods failed
+            raise Exception("All download methods failed. Video may be restricted or require authentication.")
         
-        conversion_status[conversion_id].status = "Connecting to YouTube..."
-        
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Start actual download
-            conversion_status[conversion_id].status = "Downloading video..."
-            ydl.download([url])
-            
         conversion_status[conversion_id].status = "Processing completed files..."
         
         # Find all downloaded files and their info
@@ -306,9 +392,10 @@ def health_check():
 if __name__ == '__main__':
     print("🚀 Starting YouTube Converter Backend...")
     print("📡 API will be available at: https://convert-youtube.onrender.com")
-    print("🔧 yt-dlp with YouTube bot protection enabled!")
-    print("⚡ Quality selection system is now active!")
-    print("🛡️ Anti-bot measures activated!")
+    print("🔧 yt-dlp with ADVANCED YouTube bot protection!")
+    print("⚡ Multiple fallback extraction methods enabled!")
+    print("🛡️ Advanced anti-detection measures activated!")
+    print("🎯 Random delays and user agents enabled!")
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
