@@ -1,4 +1,4 @@
 flask
 flask-cors
-yt-dlp
 gunicorn
+git+https://github.com/yt-dlp/yt-dlp.git
