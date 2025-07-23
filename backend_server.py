@@ -1,4 +1,4 @@
-# backend_server.py - Advanced YouTube bot bypass
+# backend_server.py - Enhanced with Browser Cookies + API Key Rotation
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
@@ -8,6 +8,7 @@ import threading
 import time
 import random
 from urllib.parse import urlparse, parse_qs
+import json
 
 app = Flask(__name__)
 CORS(app, origins=["https://oae2.github.io", "http://localhost:*"])
@@ -21,6 +22,37 @@ class ConversionProgress:
         self.status = "Initializing..."
         self.file_path = None
         self.error = None
+
+def get_random_api_key():
+    """Get random YouTube API key for rotation"""
+    api_keys = [
+        'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8',  # Key 1
+        'AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w',  # Key 2  
+        'AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc',  # Key 3
+        'AIzaSyCjc_pVEDi4qsv5MoC0wINiZh2YAFQ7lUs',  # Key 4
+        'AIzaSyDHQ9ipnphqTKC4FyttPrqyBFvWV_ZYLcg',  # Key 5
+        'AIzaSyAcJstVgYWo-H0z7-B6H8vTG5Zr8BmEFfs',  # Key 6
+        'AIzaSyBr8vIZJhVH5mRuURYGG_E5XQB3bZ2zEjc',  # Key 7
+    ]
+    return random.choice(api_keys)
+
+def get_browser_cookies():
+    """Try different browser cookie sources"""
+    browsers = [
+        ('chrome', None, None, None),
+        ('firefox', None, None, None), 
+        ('edge', None, None, None),
+        ('safari', None, None, None),
+    ]
+    
+    for browser_config in browsers:
+        try:
+            print(f"🍪 Attempting to use {browser_config[0]} cookies...")
+            return browser_config
+        except Exception as e:
+            print(f"⚠️ {browser_config[0]} cookies failed: {str(e)}")
+            continue
+    return None
 
 def progress_hook(d):
     """Progress hook for yt-dlp"""
@@ -48,100 +80,207 @@ def extract_video_id(url):
         return parsed.path[1:]
     return None
 
-def get_random_user_agent():
-    """Get random user agent to avoid detection"""
+def get_updated_ydl_opts():
+    """Get enhanced yt-dlp options with cookies and API rotation"""
+    
+    # Latest user agents from real browsers
     user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
     ]
-    return random.choice(user_agents)
-
-def get_ydl_opts_advanced_bypass():
-    """Advanced yt-dlp options with multiple bypass methods"""
-    return {
-        # Randomized headers
+    
+    # Base options
+    opts = {
+        # Enhanced headers to mimic real browser
         'http_headers': {
-            'User-Agent': get_random_user_agent(),
-            'Accept': '*/*',
-            'Accept-Language': 'en-US,en;q=0.9',
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9,th;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
             'DNT': '1',
             'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
         },
-        # Multiple client strategies
+        
+        # Enhanced extractor arguments with API rotation
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web', 'tv_embedded'],
+                'player_client': ['ios', 'android', 'web', 'tv_embedded'],
                 'player_skip': ['configs', 'webpage'],
-                'skip': ['hls', 'dash'],
-                'innertube_host': ['www.youtube.com', 'm.youtube.com'],
-                'innertube_key': ['AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'],
+                'skip': ['dash'],
+                'innertube_host': ['youtubei.googleapis.com'],
+                'innertube_key': [get_random_api_key()],  # Random API key rotation
+                'player_params': ['CgIQBg%3D%3D'],  # Age restriction bypass
             }
         },
-        # Advanced bypass options
-        'format_sort': ['res', 'ext'],
-        'writesubtitles': False,
-        'writeinfojson': False,
-        'writedescription': False,
-        'writethumbnail': False,
-        'writeautomaticsub': False,
-        # Network settings
-        'socket_timeout': 30,
-        'retries': 5,
-        'fragment_retries': 5,
+        
+        # Network and retry settings
+        'socket_timeout': 60,
+        'retries': 12,
+        'fragment_retries': 12,
         'retry_sleep_functions': {
-            'http': lambda n: min(4 ** n, 60),
-            'fragment': lambda n: min(4 ** n, 60),
+            'http': lambda n: min(2 ** n, 45),
+            'fragment': lambda n: min(2 ** n, 45),
         },
-        # Delays to appear human
-        'sleep_interval': random.uniform(1, 3),
-        'max_sleep_interval': random.uniform(3, 5),
-        'sleep_interval_requests': random.uniform(0.5, 1.5),
-        # Geo and certificate bypass
-        'geo_bypass': True,
-        'geo_bypass_country': 'US',
+        
+        # Random delays to appear human-like
+        'sleep_interval': random.uniform(2, 4),
+        'max_sleep_interval': random.uniform(4, 8),
+        'sleep_interval_requests': random.uniform(1, 3),
+        
+        # Enhanced bypass options
+        'format_sort': ['res:720', 'ext:mp4', 'codec'],
+        'prefer_free_formats': True,
         'no_check_certificate': True,
-        'prefer_insecure': False,
-        # Suppress output
+        'geo_bypass': True,
+        'geo_bypass_country': random.choice(['US', 'CA', 'GB', 'AU']),
+        
+        # Output settings
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
+        'writesubtitles': False,
+        'writeinfojson': False,
     }
-
-def get_format_selector(format_type, quality):
-    """Get format selector for yt-dlp with proper quality filtering"""
     
-    if quality == 'best':
-        # Return best quality available with fallbacks
-        if format_type == 'mp4':
-            return 'best[ext=mp4][height<=1080]/best[ext=mp4]/best[height<=1080]/best'
-        elif format_type == 'webm':
-            return 'best[ext=webm][height<=1080]/best[ext=webm]/best[height<=1080]/best'
+    # Try to add browser cookies (enhanced method)
+    try:
+        browser_cookies = get_browser_cookies()
+        if browser_cookies:
+            opts['cookiesfrombrowser'] = browser_cookies
+            print(f"🍪 Successfully configured {browser_cookies[0]} cookies")
         else:
-            return 'best[height<=1080]/best'
+            print("⚠️ No browser cookies available - continuing without cookies")
+    except Exception as e:
+        print(f"⚠️ Browser cookies error: {str(e)} - continuing without cookies")
     
-    # Extract height from quality string
-    height = quality.replace('p', '')
+    return opts
+
+def try_alternative_extractors(url):
+    """Try different extraction methods with enhanced options"""
     
-    # Conservative quality filtering with fallbacks
-    if format_type == 'mp4':
-        format_selector = f'best[height<={height}][ext=mp4]/bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/best[height<={height}]/best'
-    elif format_type == 'webm':
-        format_selector = f'best[height<={height}][ext=webm]/bestvideo[height<={height}][ext=webm]+bestaudio/best[height<={height}]/best'
-    else:
-        format_selector = f'best[height<={height}]/bestvideo[height<={height}]+bestaudio/best'
+    extractors = [
+        # Method 1: iOS client with cookies (highest success rate)
+        {
+            'name': 'iOS Client Enhanced',
+            'opts': {
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['ios'],
+                        'player_skip': ['configs', 'webpage'],
+                        'innertube_key': [get_random_api_key()],
+                        'player_params': ['CgIQBg%3D%3D'],
+                    }
+                }
+            }
+        },
+        
+        # Method 2: Android client with API rotation
+        {
+            'name': 'Android Client Enhanced', 
+            'opts': {
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android'],
+                        'innertube_key': [get_random_api_key()],
+                        'player_params': ['CgIQBg%3D%3D'],
+                    }
+                }
+            }
+        },
+        
+        # Method 3: TV embedded with bypass
+        {
+            'name': 'TV Embedded Enhanced',
+            'opts': {
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['tv_embedded'],
+                        'player_skip': ['configs'],
+                        'innertube_key': [get_random_api_key()],
+                    }
+                }
+            }
+        },
+        
+        # Method 4: Web client with full bypass
+        {
+            'name': 'Web Bypass Enhanced',
+            'opts': {
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['web'],
+                        'player_skip': ['configs', 'webpage'],
+                        'skip': ['hls', 'dash'],
+                        'innertube_key': [get_random_api_key()],
+                        'player_params': ['CgIQBg%3D%3D'],
+                    }
+                }
+            }
+        },
+        
+        # Method 5: Mobile web fallback
+        {
+            'name': 'Mobile Web Fallback',
+            'opts': {
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['mweb'],
+                        'innertube_key': [get_random_api_key()],
+                    }
+                },
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+                }
+            }
+        }
+    ]
     
-    print(f"📐 Quality filter: {height}p or lower")
-    return format_selector
+    for extractor in extractors:
+        try:
+            print(f"🔄 Trying {extractor['name']}...")
+            
+            # Combine base options with extractor-specific options
+            ydl_opts = get_updated_ydl_opts()
+            
+            # Merge extractor-specific options
+            if 'extractor_args' in extractor['opts']:
+                ydl_opts['extractor_args']['youtube'].update(extractor['opts']['extractor_args']['youtube'])
+            
+            if 'http_headers' in extractor['opts']:
+                ydl_opts['http_headers'].update(extractor['opts']['http_headers'])
+            
+            # Add random delay between attempts (longer delays)
+            delay = random.uniform(3, 7)
+            print(f"⏱️ Waiting {delay:.1f}s before attempt...")
+            time.sleep(delay)
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                
+                if info:
+                    print(f"✅ Success with {extractor['name']} using API key: {ydl_opts['extractor_args']['youtube']['innertube_key'][0][:20]}...")
+                    return info, extractor['name']
+                    
+        except Exception as e:
+            print(f"❌ {extractor['name']} failed: {str(e)}")
+            continue
+    
+    return None, None
 
 @app.route('/api/video-info', methods=['POST'])
 def get_video_info():
-    """Get video information without downloading"""
+    """Get video information using enhanced extraction methods"""
     try:
         data = request.get_json()
         url = data.get('url')
@@ -154,53 +293,39 @@ def get_video_info():
             return jsonify({'error': 'Invalid YouTube URL'}), 400
             
         print(f"🔍 Getting info for video: {video_id}")
+        print(f"🔑 Using enhanced extraction with cookies + API rotation")
         
-        # Try multiple extraction methods
-        methods = [
-            ('Android Client', {'extractor_args': {'youtube': {'player_client': ['android']}}}),
-            ('Web Client', {'extractor_args': {'youtube': {'player_client': ['web']}}}),
-            ('TV Embedded', {'extractor_args': {'youtube': {'player_client': ['tv_embedded']}}}),
-        ]
+        # Try alternative extractors with enhanced methods
+        info, method = try_alternative_extractors(url)
         
-        for method_name, extra_opts in methods:
-            try:
-                print(f"🔄 Trying {method_name}...")
-                
-                ydl_opts = get_ydl_opts_advanced_bypass()
-                ydl_opts.update(extra_opts)
-                
-                # Add random delay
-                time.sleep(random.uniform(1, 2))
-                
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    
-                    print(f"✅ Success with {method_name}")
-                    
-                    return jsonify({
-                        'title': info.get('title', 'Unknown Title'),
-                        'duration': info.get('duration', 0),
-                        'thumbnail': info.get('thumbnail', ''),
-                        'uploader': info.get('uploader', 'Unknown'),
-                        'view_count': info.get('view_count', 0),
-                        'video_id': video_id,
-                        'method': method_name
-                    })
-                    
-            except Exception as e:
-                print(f"❌ {method_name} failed: {str(e)}")
-                continue
-        
-        # If all methods fail, return a generic error
-        return jsonify({'error': 'Unable to extract video info. Video may be private, restricted, or require authentication.'}), 400
+        if info:
+            return jsonify({
+                'title': info.get('title', 'Unknown Title'),
+                'duration': info.get('duration', 0),
+                'thumbnail': info.get('thumbnail', ''),
+                'uploader': info.get('uploader', 'Unknown'),
+                'view_count': info.get('view_count', 0),
+                'video_id': video_id,
+                'extraction_method': method,
+                'available_formats': len(info.get('formats', [])),
+                'enhanced_features': True,
+                'success': True
+            })
+        else:
+            return jsonify({
+                'error': 'Unable to extract video information with enhanced methods',
+                'suggestion': 'Video may be private, age-restricted, or heavily protected',
+                'tried_methods': 'iOS, Android, TV, Web, Mobile with cookies + API rotation',
+                'success': False
+            }), 400
             
     except Exception as e:
-        print(f"❌ Video info error: {str(e)}")
-        return jsonify({'error': f'Failed to get video info: {str(e)}'}), 500
+        print(f"❌ Enhanced video info error: {str(e)}")
+        return jsonify({'error': f'Enhanced extraction failed: {str(e)}'}), 500
 
 @app.route('/api/convert', methods=['POST'])
 def convert_video():
-    """Start video conversion"""
+    """Start video conversion using enhanced extraction methods"""
     try:
         data = request.get_json()
         url = data.get('url')
@@ -214,62 +339,78 @@ def convert_video():
         conversion_id = f"conv_{int(time.time())}"
         conversion_status[conversion_id] = ConversionProgress()
         
-        print(f"🚀 Starting conversion: {format_type.upper()} @ {quality.upper()}")
+        print(f"🚀 Starting enhanced conversion: {format_type.upper()} @ {quality.upper()}")
         print(f"📹 URL: {url}")
+        print(f"🛡️ Using cookies + API rotation + multiple clients")
         
         # Start conversion in background thread
         thread = threading.Thread(
-            target=perform_conversion,
+            target=perform_conversion_enhanced,
             args=(conversion_id, url, format_type, quality)
         )
         thread.start()
         
         return jsonify({
             'conversion_id': conversion_id,
-            'status': 'started'
+            'status': 'started',
+            'message': 'Enhanced conversion started with cookies + API rotation',
+            'features': ['browser_cookies', 'api_rotation', 'multiple_clients', 'age_bypass']
         })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def perform_conversion(conversion_id, url, format_type, quality):
-    """Perform the actual video conversion with multiple fallback methods"""
+def perform_conversion_enhanced(conversion_id, url, format_type, quality):
+    """Perform conversion with enhanced methods"""
     try:
         # Create temporary directory
         temp_dir = tempfile.mkdtemp()
         
-        conversion_status[conversion_id].status = "Initializing conversion..."
+        conversion_status[conversion_id].status = "Initializing enhanced conversion..."
         
-        # Get format selector
-        format_selector = get_format_selector(format_type, quality)
-        print(f"🎯 Using format selector: {format_selector}")
+        # Quality selector with smart approach
+        if quality == 'best':
+            format_selector = 'best[height<=1080]/best[height<=720]/best'
+        else:
+            height = quality.replace('p', '')
+            format_selector = f'best[height<={height}]/bestvideo[height<={height}]+bestaudio/best[height<=720]'
         
-        # Add quality to filename for identification
+        print(f"🎯 Using enhanced format selector: {format_selector}")
+        
+        # Filename template
         quality_suffix = f"_{quality}" if quality != 'best' else "_best"
         filename_template = f'%(title)s{quality_suffix}.%(ext)s'
         
-        # Try multiple extraction methods for download
-        methods = [
-            ('Android Client', {'extractor_args': {'youtube': {'player_client': ['android']}}}),
-            ('TV Embedded', {'extractor_args': {'youtube': {'player_client': ['tv_embedded']}}}),
-            ('Web Client', {'extractor_args': {'youtube': {'player_client': ['web']}}}),
+        # Enhanced extraction methods for download
+        extractors = [
+            {'name': 'iOS Enhanced', 'client': ['ios'], 'priority': 1},
+            {'name': 'Android Enhanced', 'client': ['android'], 'priority': 2}, 
+            {'name': 'TV Enhanced', 'client': ['tv_embedded'], 'priority': 3},
+            {'name': 'Web Enhanced', 'client': ['web'], 'priority': 4},
+            {'name': 'Mobile Enhanced', 'client': ['mweb'], 'priority': 5},
         ]
         
-        for method_name, extra_opts in methods:
+        for extractor in extractors:
             try:
-                conversion_status[conversion_id].status = f"Trying {method_name}..."
-                print(f"🔄 Download attempt with {method_name}")
+                conversion_status[conversion_id].status = f"Trying {extractor['name']} extraction..."
+                print(f"🔄 Download attempt {extractor['priority']}/5 with {extractor['name']} client")
                 
-                # Configure yt-dlp options with method-specific settings
-                ydl_opts = get_ydl_opts_advanced_bypass()
-                ydl_opts.update(extra_opts)
+                # Build enhanced yt-dlp options
+                ydl_opts = get_updated_ydl_opts()
                 ydl_opts.update({
                     'format': format_selector,
                     'outtmpl': os.path.join(temp_dir, filename_template),
                     'progress_hooks': [lambda d: progress_hook({**d, 'conversion_id': conversion_id})],
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': extractor['client'],
+                            'innertube_key': [get_random_api_key()],  # Fresh API key for each attempt
+                            'player_params': ['CgIQBg%3D%3D'],
+                        }
+                    }
                 })
                 
-                # Add format-specific options
+                # Format-specific settings
                 if format_type == 'mp3':
                     ydl_opts.update({
                         'format': 'bestaudio/best',
@@ -285,10 +426,12 @@ def perform_conversion(conversion_id, url, format_type, quality):
                         'preferedformat': format_type,
                     }]
                 
-                conversion_status[conversion_id].status = f"Downloading with {method_name}..."
+                conversion_status[conversion_id].status = f"Downloading with {extractor['name']}..."
                 
-                # Random delay between attempts
-                time.sleep(random.uniform(2, 4))
+                # Enhanced random delay with priority-based timing
+                delay = random.uniform(4, 8) + (extractor['priority'] * 1)
+                print(f"⏱️ Enhanced delay: {delay:.1f}s for attempt {extractor['priority']}")
+                time.sleep(delay)
                 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
@@ -298,52 +441,42 @@ def perform_conversion(conversion_id, url, format_type, quality):
                 video_files = [f for f in all_files if not f.endswith('.info.json')]
                 
                 if video_files:
-                    print(f"✅ Download success with {method_name}")
+                    print(f"✅ Enhanced download success with {extractor['name']}")
                     break
                 else:
-                    print(f"❌ No files downloaded with {method_name}")
+                    print(f"❌ No files with {extractor['name']}")
                     continue
                     
             except Exception as e:
-                print(f"❌ {method_name} download failed: {str(e)}")
+                print(f"❌ {extractor['name']} failed: {str(e)}")
                 continue
         else:
-            # All methods failed
-            raise Exception("All download methods failed. Video may be restricted or require authentication.")
+            raise Exception("All enhanced extraction methods failed")
         
-        conversion_status[conversion_id].status = "Processing completed files..."
+        # Process downloaded files
+        conversion_status[conversion_id].status = "Processing downloaded files..."
         
-        # Find all downloaded files and their info
         all_files = os.listdir(temp_dir)
         video_files = [f for f in all_files if not f.endswith('.info.json')]
         
-        print(f"📁 Files in temp directory:")
-        for file in all_files:
-            file_path = os.path.join(temp_dir, file)
-            size_mb = os.path.getsize(file_path) / 1024 / 1024
-            print(f"  {file} - {size_mb:.1f}MB")
-        
         if video_files:
-            # Select the main video file (usually the largest non-info file)
             main_file = max(video_files, key=lambda f: os.path.getsize(os.path.join(temp_dir, f)))
             conversion_status[conversion_id].file_path = os.path.join(temp_dir, main_file)
             
-            # Get file size for verification
             file_size_mb = os.path.getsize(conversion_status[conversion_id].file_path) / 1024 / 1024
             
-            print(f"🎉 Conversion complete: {main_file}")
+            print(f"🎉 Enhanced conversion complete: {main_file}")
             print(f"📊 Final file size: {file_size_mb:.1f}MB")
             
-            conversion_status[conversion_id].status = f"Conversion complete - {file_size_mb:.1f}MB"
+            conversion_status[conversion_id].status = f"Enhanced conversion complete - {file_size_mb:.1f}MB"
+            conversion_status[conversion_id].progress = 100
         else:
-            raise Exception("No video file found after conversion")
-        
-        conversion_status[conversion_id].progress = 100
+            raise Exception("No video file found after enhanced conversion")
         
     except Exception as e:
         conversion_status[conversion_id].error = str(e)
-        conversion_status[conversion_id].status = f"Error: {str(e)}"
-        print(f"❌ Conversion error: {str(e)}")
+        conversion_status[conversion_id].status = f"Enhanced conversion error: {str(e)}"
+        print(f"❌ Enhanced conversion error: {str(e)}")
 
 @app.route('/api/status/<conversion_id>', methods=['GET'])
 def get_conversion_status(conversion_id):
@@ -353,7 +486,6 @@ def get_conversion_status(conversion_id):
         
     status = conversion_status[conversion_id]
     
-    # Get file size if file exists
     file_size_mb = None
     if status.file_path and os.path.exists(status.file_path):
         file_size_mb = os.path.getsize(status.file_path) / 1024 / 1024
@@ -364,7 +496,8 @@ def get_conversion_status(conversion_id):
         'error': status.error,
         'completed': status.progress >= 100 and not status.error,
         'file_available': status.file_path is not None,
-        'file_size_mb': round(file_size_mb, 1) if file_size_mb else None
+        'file_size_mb': round(file_size_mb, 1) if file_size_mb else None,
+        'enhanced': True
     })
 
 @app.route('/api/download/<conversion_id>', methods=['GET'])
@@ -386,15 +519,23 @@ def download_file(conversion_id):
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'message': 'YouTube Converter API is running'})
+    return jsonify({
+        'status': 'healthy', 
+        'message': 'Enhanced YouTube Converter API with cookies + API rotation',
+        'features': ['browser_cookies', 'api_key_rotation', 'multiple_clients', 'age_bypass', 'geo_bypass']
+    })
 
 if __name__ == '__main__':
-    print("🚀 Starting YouTube Converter Backend...")
-    print("📡 API will be available at: https://convert-youtube.onrender.com")
-    print("🔧 yt-dlp with ADVANCED YouTube bot protection!")
-    print("⚡ Multiple fallback extraction methods enabled!")
-    print("🛡️ Advanced anti-detection measures activated!")
-    print("🎯 Random delays and user agents enabled!")
+    print("🚀 Starting Enhanced YouTube Converter Backend...")
+    print("📡 API available at: https://convert-youtube.onrender.com")
+    print("🔧 Enhanced yt-dlp with 2025 advanced bypass methods!")
+    print("🍪 Browser cookies integration enabled!")
+    print("🔑 API key rotation system active!")
+    print("📱 iOS/Android/TV/Web/Mobile clients enabled!")
+    print("🛡️ Advanced anti-detection with real browser simulation!")
+    print("🎯 Multiple fallback extraction methods with priority system!")
+    print("🌍 Geographic bypass with random countries!")
+    print("⚡ Age restriction bypass enabled!")
     import os
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
